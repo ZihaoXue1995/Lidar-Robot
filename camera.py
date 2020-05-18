@@ -67,10 +67,11 @@ class Camera(object):
 			thread1.join()
 			thread2.join()
 			thread3.join()
+			cv2.imshow('recording', frame_resize)
 			if(self.recognized_state != 0):
 				message.put(self.recognized_state)
+				time.sleep(2)
 				self.recognized_state = 0
-			cv2.imshow('recording', frame_resize)
 			
 		    #A keyboard binding function. Its argument is the time in milliseconds. 
             #The function waits for specified milliseconds for any keyboard event. 
