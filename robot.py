@@ -13,7 +13,7 @@ MAP_SIZE_PIXELS         = 500
 MAP_SIZE_METERS         = 10
 
 class Robot:
-	def __init__(self):
+	def __init__(self, messagequeue):
 		# Connect to Lidar unit
 		# when initializing the robot object, we first open lidar and start
 		# reading data from the lidar
@@ -26,19 +26,15 @@ class Robot:
 		self.viz = MapVisualizer(MAP_SIZE_PIXELS, MAP_SIZE_METERS, 'SLAM')
 		# Initialize empty map
 		self.mapbytes = bytearray(MAP_SIZE_PIXELS * MAP_SIZE_PIXELS)
+		self.messages = messagequeue
 		
-		# NOTE: DEPRECATED!! constructing map should always run in the main process
-		# NOTE: otherwise won't get data from the lidar
-		
-		#self.left_distance_table = np.zeros(80)
-		#self.right_distance_table = np.zeros(80)
-		#self.constructmap()
-		#self.thread = threading.Thread(target=self.navigate, args=())
+		# All the functions should run in the same process so that the variable can be shared
+		self.thread = threading.Thread(target=self.navigate, args=())
 		# the main-thread will exit without checking the sub-thread at the end of the main thread. 
 		# At the same time, all sub-threads with the daemon value of True will end with the main thread, regardless of whether the operation is completed.
-		#self.thread.daemon = True
-		#self.navigating = True
-		#self.thread.start()
+		self.thread.daemon = True
+		self.navigating = True
+		self.thread.start()
 		
 	# Construct Map should always run in the main process
 	def constructmap(self):
@@ -55,10 +51,10 @@ class Robot:
 			if not self.viz.display(x/1000., y/1000., theta, self.mapbytes):
 				break
 		
-	def navigate(self, running_state, message):
-		while running_state.value:
+	def navigate(self):
+		while self.navigating:
 			time.sleep(0.01) # (yield) allowing reading data from the serailport
-			if(message.empty()): # The camera doesn't detect one traffic sign
+			if(True): # The camera doesn't detect one traffic sign message.empty()
 				front_too_close, left_too_close, right_too_close = False, False, False
 				if(self.lidar.angle_180 < 400):
 					front_too_close = True
@@ -82,15 +78,16 @@ class Robot:
 						self.mover.turn_left(right_angle)
 				else:
 					self.mover.forward()
+				#print(self.lidar.left_container)
+				#print(front_too_close, left_too_close, right_too_close, self.lidar.angle_180)
 			else:
-				sign = message.get() # get the detection id
+				sign = self.messages.get() # get the detection id
 				if(sign == 1):
 					self.mover.stop()
 				elif(sign == 2):
 					self.mover.turn_right()
 				else:
 					self.mover.turn_left()	
-			#print(front_too_close, left_too_close, right_too_close, self.lidar.angle_180)			
 			
 
 if __name__ == "__main__":
@@ -99,17 +96,16 @@ if __name__ == "__main__":
 	messagequeue = Queue()
 	# multiprocessing required classes
 	camera = Camera()
-	robot = Robot()
+	robot = Robot(messagequeue)
 	# processes
-	pro1 = Process(target=robot.navigate, args=(running, messagequeue,))
-	pro2 = Process(target=camera.recording, args=(running, messagequeue,))
+	pro1 = Process(target=camera.recording, args=(running, messagequeue,))
 	pro1.start()
-	pro2.start()
-	
+	#pro2.start()
 	robot.constructmap()
-	# Wait for 2 processes to safely exit
+	robot.navigating = False
+	# Wait for the process to safely exit
 	pro1.join()
-	pro2.join()
+	#pro2.join()
 	robot.mover.shutdown()
 	print("safely exit")
 

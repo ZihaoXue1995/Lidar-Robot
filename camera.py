@@ -1,6 +1,7 @@
 import cv2
 import threading
 from multiprocessing import Queue, Value, Lock
+import time
 
 CV_CAP_PROP_FRAME_WIDTH = 3
 CV_CAP_PROP_FRAME_HEIGHT = 4
@@ -38,7 +39,7 @@ class Camera(object):
 	def matching(self, lock, frame_resize, frame, template, template_id):
 		match_res = cv2.matchTemplate(frame, template, cv2.TM_CCORR_NORMED)
 		min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(match_res)
-		#print(max_val)
+		print(max_val)
 		if(max_val > self.threshold):
 			top_left = max_loc
 			bottom_right = (top_left[0] + self.template_size[0], top_left[1] + self.template_size[1])
@@ -68,10 +69,10 @@ class Camera(object):
 			thread2.join()
 			thread3.join()
 			cv2.imshow('recording', frame_resize)
-			if(self.recognized_state != 0):
-				message.put(self.recognized_state)
-				time.sleep(2)
-				self.recognized_state = 0
+			#if(self.recognized_state != 0):
+				#message.put(self.recognized_state)
+				#time.sleep(2)
+				#self.recognized_state = 0
 			
 		    #A keyboard binding function. Its argument is the time in milliseconds. 
             #The function waits for specified milliseconds for any keyboard event. 
