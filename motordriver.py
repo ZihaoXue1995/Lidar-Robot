@@ -43,12 +43,6 @@ class MotorController:
 		self.lastPWM1, self.lastPWM2 = 0, 0
 	
 	def stop(self):
-		if(self.lastPWM1 == 0 and self.lastPWM2 == 0):
-			return
-		self.controller.write(22, 1)
-		self.controller.write(23, 0)
-		self.controller.write(24, 1)
-		self.controller.write(25, 0)
 		self.controller.hardware_PWM(13, WORKING_FREQUENCY, 0) 
 		self.controller.hardware_PWM(12, WORKING_FREQUENCY, 0)
 		self.lastPWM1, self.lastPWM2 = 0, 0
@@ -105,6 +99,15 @@ class MotorController:
 			self.speed_table[i] = (790000, 790000)
 		for i in range(70, 80):
 			self.speed_table[i] = (800000, 800000)
+			
+	def shutdown(self):
+		self.stop()
+		self.controller.write(22, 0)
+		self.controller.write(23, 0)
+		self.controller.write(24, 0)
+		self.controller.write(25, 0)
+		# Release pigpio resources
+		self.controller.stop()
 		
 
 if __name__ == "__main__":

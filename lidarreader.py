@@ -23,7 +23,7 @@ class lidarReader:
 	    self.right_container.fill(30000) # The maximum distance that the lidar can detect is 3 meters
 	    self.left_container.fill(30000)  # Fill distance array with the maximum distance  
 	    self.thread = threading.Thread(target=self.read, args=())
-	    #self.thread.daemon = True
+	    self.thread.daemon = True
 	    self.thread.start()
 		
 	def getdata(self):
@@ -94,9 +94,10 @@ class lidarReader:
 		self.container[angle-180] = dist_mm
 	    else:
 		self.container[angle+180] = dist_mm
-	    
+		
+	    #print(angle, dist_mm, quality) # data coming back is accurate
 	    if(quality != 0 and dist_mm >= 150): # protect data integrity
-		#print(angle, dist_mm, quality) # data coming back is accurate
+		
 		if(angle > 185 and angle <= 265): # index:0-79
 		    self.left_container[angle-186] = dist_mm
 		elif(angle >= 95 and angle < 175): # index:0-79
